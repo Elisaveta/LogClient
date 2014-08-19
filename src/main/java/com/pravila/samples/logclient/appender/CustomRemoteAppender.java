@@ -1,22 +1,43 @@
-package com.pravila.samples.logclient;
+package com.pravila.samples.logclient.appender;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Properties;
 
 import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 
 import com.google.gson.Gson;
+import com.pravila.samples.logclient.LogItem;
 
 public class CustomRemoteAppender extends AppenderSkeleton {
 
-	List<LoggingEvent> buffer = new ArrayList<LoggingEvent>();
+	private static Logger logger = Logger.getLogger(CustomRemoteAppender.class);
+
+	static StringWriter stack = new StringWriter();
+
+	private static Properties configProp = new Properties();
+	InputStream in = null;
+	
+	public CustomRemoteAppender() {
+		in = CustomRemoteAppender.class.getClass().getResourceAsStream(
+				"/config.properties");
+		try {
+			configProp.load(in);
+			in.close();
+		} catch (IOException e) {
+			logger.error("Caught IOException "
+					+ stack.toString());
+		}
+	}
 
 	public void close() {
 		// TODO Auto-generated method stub
@@ -37,7 +58,6 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 		item.setClassName(event.getLogger().getName());
 		item.setMessage(event.getMessage().toString());
 		Gson gson = new Gson();
-		System.out.println(gson.toJson(item));
 		try {
 			sendRequest(gson.toJson(item));
 		} catch (IOException e) {
@@ -49,36 +69,36 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 
 	public static void sendRequest(String generatedJSONString)
 			throws IOException {
+		
 		HttpURLConnection conn = null;
+		URL url = null;
 		try {
-			URL url = new URL("http://127.0.0.1:8001/json/log/post");
-			 conn = (HttpURLConnection) url.openConnection();
+			url = new URL(configProp.getProperty("host") + ":" + configProp.getProperty("port") + "/json/log/post");
+			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("Content-Type", "application/json");
 			conn.setDoOutput(true);
-			// conn.setRequestProperty ("Authorization", encodedCredentials);
-
 			OutputStreamWriter writer = new OutputStreamWriter(
 					conn.getOutputStream());
-
 			writer.write(generatedJSONString);
 			writer.flush();
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
 					conn.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				System.out.println(line);
+				if (!line.equals(201)) {
+					logger.error(line + generatedJSONString);
+				}
 			}
 			writer.close();
 			reader.close();
+			logger.debug("prv custom debug");
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		
-		finally {
-			conn.disconnect();
+			StringWriter stack = new StringWriter();
+			e.printStackTrace(new PrintWriter(stack));
+			logger.error("Caught exception; Connection failed to server "
+					+ stack.toString());
 		}
 
 	}

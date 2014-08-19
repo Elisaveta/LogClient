@@ -3,7 +3,7 @@ package com.pravila.samples.logclient;
 import java.util.Timer;
 
 /**
- * .
+ * 
  * 
  */
 public class LogClient {
