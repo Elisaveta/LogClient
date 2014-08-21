@@ -2,11 +2,14 @@ package com.pravila.samples.logclient;
 
 import java.io.Serializable;
 
+
+/**
+ * @author Elisaveta Manasieva
+ * @version 1.0.0
+ * POJO class
+ */
 public class LogItem implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private String level;
 	private Long date;

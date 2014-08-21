@@ -18,15 +18,20 @@ import org.apache.log4j.spi.LoggingEvent;
 import com.google.gson.Gson;
 import com.pravila.samples.logclient.LogItem;
 
+/**
+ * @author Elisaveta Manasieva
+ * 
+ * @version 1.0.0
+ * 
+ */
 public class CustomRemoteAppender extends AppenderSkeleton {
 
 	private static Logger logger = Logger.getLogger(CustomRemoteAppender.class);
 
 	static StringWriter stack = new StringWriter();
-
 	private static Properties configProp = new Properties();
 	InputStream in = null;
-	
+
 	public CustomRemoteAppender() {
 		in = CustomRemoteAppender.class.getClass().getResourceAsStream(
 				"/config.properties");
@@ -34,8 +39,7 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 			configProp.load(in);
 			in.close();
 		} catch (IOException e) {
-			logger.error("Caught IOException "
-					+ stack.toString());
+			logger.error("Caught IOException " + stack.toString());
 		}
 	}
 
@@ -49,6 +53,15 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 		return false;
 	}
 
+	/**
+	 * method which receive logging events
+	 * 
+	 * @param event
+	 * @throws IOException
+	 * receive all logging events, create json object and send
+	 * request to log server
+	 */
+
 	@Override
 	protected void append(LoggingEvent event) {
 
@@ -61,19 +74,27 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 		try {
 			sendRequest(gson.toJson(item));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			e.printStackTrace(new PrintWriter(stack));
+			logger.error("Caught IOException exception " + stack.toString());
 		}
 
 	}
 
+	/**
+	 * method which send event requests to log server to store in database
+	 * 
+	 * @param generatedJSONString
+	 * @throws IOException
+	 */
+
 	public static void sendRequest(String generatedJSONString)
 			throws IOException {
-		
+
 		HttpURLConnection conn = null;
 		URL url = null;
 		try {
-			url = new URL(configProp.getProperty("host") + ":" + configProp.getProperty("port") + "/json/log/post");
+			url = new URL(configProp.getProperty("host") + ":"
+					+ configProp.getProperty("port") + "/json/log/post");
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("Content-Type", "application/json");
@@ -82,25 +103,18 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 					conn.getOutputStream());
 			writer.write(generatedJSONString);
 			writer.flush();
-			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
 					conn.getInputStream()));
-			while ((line = reader.readLine()) != null) {
-				if (!line.equals(201)) {
-					logger.error(line + generatedJSONString);
-				}
-			}
 			writer.close();
 			reader.close();
-			logger.debug("prv custom debug");
 
 		} catch (IOException e) {
-			StringWriter stack = new StringWriter();
 			e.printStackTrace(new PrintWriter(stack));
-			logger.error("Caught exception; Connection failed to server "
+			logger.error("Caught IOException exception "
 					+ stack.toString());
+		} finally {
+			conn.disconnect();
 		}
-
 	}
 
 }
