@@ -110,7 +110,9 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 
 		} catch (IOException e) {
 			Gson gson = new Gson();
-			
+			e.printStackTrace(new PrintWriter(stack));
+			logger.error("Caught IOException "
+					+ stack.toString() + "\n");
 			logger.error(" " + gson.fromJson(generatedJSONString, LogItem.class).getLevel() + " " + gson.fromJson(generatedJSONString, LogItem.class).getDate() + " " + gson.fromJson(generatedJSONString, LogItem.class).getClassName() + " " + gson.fromJson(generatedJSONString, LogItem.class).getMessage());
 		} finally {
 			conn.disconnect();
