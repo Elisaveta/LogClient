@@ -75,7 +75,7 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 			sendRequest(gson.toJson(item));
 		} catch (IOException e) {
 			e.printStackTrace(new PrintWriter(stack));
-			logger.error("Caught IOException exception " + stack.toString());
+			logger.error(" " + item.getLevel() + " " +item.getDate() + " " + item.getClassName() + " " + item.getMessage());
 		}
 
 	}
@@ -109,9 +109,9 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 			reader.close();
 
 		} catch (IOException e) {
-			e.printStackTrace(new PrintWriter(stack));
-			logger.error("Caught IOException exception "
-					+ stack.toString());
+			Gson gson = new Gson();
+			
+			logger.error(" " + gson.fromJson(generatedJSONString, LogItem.class).getLevel() + " " + gson.fromJson(generatedJSONString, LogItem.class).getDate() + " " + gson.fromJson(generatedJSONString, LogItem.class).getClassName() + " " + gson.fromJson(generatedJSONString, LogItem.class).getMessage());
 		} finally {
 			conn.disconnect();
 		}
