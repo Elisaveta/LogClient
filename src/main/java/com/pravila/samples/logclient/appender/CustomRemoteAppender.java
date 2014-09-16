@@ -93,12 +93,15 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 		HttpURLConnection conn = null;
 		URL url = null;
 		try {
+			System.out.println(System.currentTimeMillis());
 			url = new URL(configProp.getProperty("host") + ":"
 					+ configProp.getProperty("port") + "/json/log/post");
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("Content-Type", "application/json");
 			conn.setDoOutput(true);
+			conn.setConnectTimeout(500);
+			conn.setReadTimeout(1000);
 			OutputStreamWriter writer = new OutputStreamWriter(
 					conn.getOutputStream());
 			writer.write(generatedJSONString);
@@ -109,6 +112,8 @@ public class CustomRemoteAppender extends AppenderSkeleton {
 			reader.close();
 
 		} catch (IOException e) {
+			System.out.println(System.currentTimeMillis() +  " catch part ");
+			
 			Gson gson = new Gson();
 			e.printStackTrace(new PrintWriter(stack));
 			logger.error("Caught IOException "
